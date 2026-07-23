@@ -9,15 +9,17 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from long_horizon_bench.cli.runs import deprecated_no_rebuild_warning
-from long_horizon_bench.file_config.resolve import resolve_run_params
-from long_horizon_bench.file_config.run_file import LhbRunFileConfig
-from long_horizon_bench.task_images.strategy import (
+from loopsbench.cli.runs import deprecated_no_rebuild_warning
+from loopsbench.file_config.resolve import resolve_run_params
+from loopsbench.file_config.run_file import LoopsBenchRunFileConfig
+from loopsbench.task_images.strategy import (
+    DEFAULT_REMOTE_DOCKER_IMAGE_TAG,
     DockerImageStrategy,
     local_client_image_name,
     normalize_task_id,
     remote_client_image_ref,
     resolve_docker_image_strategy,
+    resolve_task_docker_image,
     task_image_repo,
     validate_remote_docker_image_coordinates,
 )
@@ -55,30 +57,62 @@ def _resolve(**overrides):
 def test_strategy_helpers_normalize_and_build_image_refs() -> None:
     task_id = "task_hadoop_seg05"
     assert normalize_task_id(task_id) == "task-hadoop-seg05"
-    assert local_client_image_name(task_id) == "lhb__task_hadoop_seg05__client"
+    assert local_client_image_name(task_id) == "loopsbench__task_hadoop_seg05__client"
     assert task_image_repo("exampleorg", task_id) == (
-        "exampleorg/lhb-task-hadoop-seg05"
+        "exampleorg/loopsbench-task-hadoop-seg05"
     )
     assert remote_client_image_ref("exampleorg", task_id, "git-ab12cd3") == (
-        "exampleorg/lhb-task-hadoop-seg05:git-ab12cd3"
+        "exampleorg/loopsbench-task-hadoop-seg05:git-ab12cd3"
     )
 
 
-def test_resolve_run_params_defaults_to_remote_strategy() -> None:
+def test_resolve_run_params_defaults_remote_tag_to_latest() -> None:
     rp = _resolve()
     assert rp["docker_image_strategy"] == DockerImageStrategy.REMOTE
     assert rp["docker_image_namespace"] is None
+    assert rp["docker_image_tag"] == DEFAULT_REMOTE_DOCKER_IMAGE_TAG
+    assert rp["docker_image_tag_defaulted"] is True
+
+
+def test_resolve_run_params_preserves_explicit_remote_tag() -> None:
+    rp = _resolve(
+        docker_image_namespace="exampleorg",
+        docker_image_tag="git-ab12cd3",
+    )
+    assert rp["docker_image_strategy"] == DockerImageStrategy.REMOTE
+    assert rp["docker_image_namespace"] == "exampleorg"
+    assert rp["docker_image_tag"] == "git-ab12cd3"
+    assert rp["docker_image_tag_defaulted"] is False
+
+
+def test_resolve_run_params_empty_remote_tag_defaults_to_latest() -> None:
+    rp = _resolve(
+        docker_image_namespace="exampleorg",
+        docker_image_tag="",
+    )
+    assert rp["docker_image_strategy"] == DockerImageStrategy.REMOTE
+    assert rp["docker_image_namespace"] == "exampleorg"
+    assert rp["docker_image_tag"] == DEFAULT_REMOTE_DOCKER_IMAGE_TAG
+    assert rp["docker_image_tag_defaulted"] is True
+
+
+def test_resolve_run_params_local_build_does_not_synthesize_tag() -> None:
+    rp = _resolve(docker_image_strategy=DockerImageStrategy.LOCAL_BUILD)
+    assert rp["docker_image_strategy"] == DockerImageStrategy.LOCAL_BUILD
     assert rp["docker_image_tag"] is None
+    assert rp["docker_image_tag_defaulted"] is False
 
 
 def test_no_rebuild_maps_to_local_existing_strategy() -> None:
     rp = _resolve(no_rebuild=True)
     assert rp["no_rebuild"] is True
     assert rp["docker_image_strategy"] == DockerImageStrategy.LOCAL_EXISTING
+    assert rp["docker_image_tag"] is None
+    assert rp["docker_image_tag_defaulted"] is False
 
 
 def test_run_file_accepts_docker_image_fields() -> None:
-    cfg = LhbRunFileConfig.model_validate(
+    cfg = LoopsBenchRunFileConfig.model_validate(
         {
             "docker_image_strategy": "local-build",
             "docker_image_namespace": "exampleorg",
@@ -108,18 +142,24 @@ def test_resolve_docker_image_strategy_defaults_to_remote() -> None:
     )
 
 
-def test_validate_remote_strategy_requires_namespace_and_tag() -> None:
+def test_validate_remote_strategy_requires_namespace_but_not_tag() -> None:
     with pytest.raises(
         ValueError,
-        match=(
-            "docker_image_namespace and docker_image_tag are required when "
-            "docker_image_strategy=remote"
-        ),
+        match="docker_image_namespace is required when docker_image_strategy=remote",
     ):
         validate_remote_docker_image_coordinates(
             strategy=DockerImageStrategy.REMOTE,
             docker_image_namespace=None,
             docker_image_tag=None,
+        )
+    with pytest.raises(
+        ValueError,
+        match="docker_image_namespace is required when docker_image_strategy=remote",
+    ):
+        validate_remote_docker_image_coordinates(
+            strategy=DockerImageStrategy.REMOTE,
+            docker_image_namespace=None,
+            docker_image_tag="git-ab12cd3",
         )
 
     validate_remote_docker_image_coordinates(
@@ -130,8 +170,45 @@ def test_validate_remote_strategy_requires_namespace_and_tag() -> None:
     validate_remote_docker_image_coordinates(
         strategy=DockerImageStrategy.REMOTE,
         docker_image_namespace="exampleorg",
+        docker_image_tag=None,
+    )
+    validate_remote_docker_image_coordinates(
+        strategy=DockerImageStrategy.REMOTE,
+        docker_image_namespace="exampleorg",
         docker_image_tag="git-ab12cd3",
     )
+
+
+def test_resolve_task_docker_image_defaults_remote_tag_to_latest() -> None:
+    resolved = resolve_task_docker_image(
+        task_id="task_hadoop_seg05",
+        strategy=DockerImageStrategy.REMOTE,
+        docker_image_namespace="exampleorg",
+        docker_image_tag=None,
+    )
+    assert resolved.client_image_ref == remote_client_image_ref(
+        "exampleorg",
+        "task_hadoop_seg05",
+        DEFAULT_REMOTE_DOCKER_IMAGE_TAG,
+    )
+    assert resolved.pull_required is True
+    assert resolved.build_required is False
+
+
+def test_resolve_task_docker_image_empty_remote_tag_defaults_to_latest() -> None:
+    resolved = resolve_task_docker_image(
+        task_id="task_hadoop_seg05",
+        strategy=DockerImageStrategy.REMOTE,
+        docker_image_namespace="exampleorg",
+        docker_image_tag="",
+    )
+    assert resolved.client_image_ref == remote_client_image_ref(
+        "exampleorg",
+        "task_hadoop_seg05",
+        DEFAULT_REMOTE_DOCKER_IMAGE_TAG,
+    )
+    assert resolved.pull_required is True
+    assert resolved.build_required is False
 
 
 def test_deprecated_no_rebuild_warning_mentions_replacement() -> None:
