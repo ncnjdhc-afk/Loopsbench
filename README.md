@@ -66,13 +66,16 @@ python -m loopsbench.cli.main --help
 
 This checkout does not ship with a top-level `tasks/` directory, so real harness runs need an external task checkout.
 
-Example:
+The recommended distribution channel for task data is the repository's [GitHub Releases](https://github.com/microsoft/Loopsbench/releases) page.
+
+Download a release asset named like `loopsbench-tasks-<commit>.tar.zst` together with its checksum file `loopsbench-tasks-<commit>.tar.zst.sha256`.
 
 ```bash
-git clone https://huggingface.co/datasets/forcel48/LoopsBench ../LoopsBench-dataset
+sha256sum -c loopsbench-tasks-<commit>.tar.zst.sha256
+tar --zstd -xf loopsbench-tasks-<commit>.tar.zst
 ```
 
-You can then point the CLI at that checkout with `--dataset-path` or `--tasks-dir`.
+After extraction, you will have a top-level `tasks/` directory that can be passed to the CLI with `--dataset-path` or `--tasks-dir`.
 
 ## Running LoopsBench
 
@@ -188,9 +191,7 @@ If you want to use those workflows, add or mount a compatible `tasks/` tree besi
 
 ## Current limitations
 
-This repository no longer includes the auxiliary top-level `scripts/` directory that existed in broader working copies, so README examples here focus on the packaged CLI and the retained harness-related tests rather than external publishing or maintenance scripts.
-
-If you need task-image publishing or dataset maintenance workflows, run them from a fuller working checkout that still contains those scripts.
+This repository still does not vendor the benchmark dataset itself, so task execution requires an external `tasks/` checkout.
 
 ## Testing quick reference
 

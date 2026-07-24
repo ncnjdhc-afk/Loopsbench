@@ -1,21 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-import re
 
 import yaml
 from pydantic import BaseModel
 
 from loopsbench.handlers.trial_handler import Task
-from loopsbench.task_images.strategy import (
-    local_client_image_name,
-    normalize_task_id,
-    remote_client_image_ref,
-    task_image_repo,
-)
-
-
-_SEG_TASK_RE = re.compile(r"_seg\d+$")
+from loopsbench.task_images.strategy import task_image_repo
 
 
 class TaskImageSource(BaseModel):
@@ -89,11 +80,8 @@ def discover_task_images(tasks_root: Path) -> list[TaskImageSource]:
 
 
 def discover_nonseg_task_images(tasks_root: Path) -> list[TaskImageSource]:
-    return [
-        source
-        for source in discover_task_images(tasks_root)
-        if not _SEG_TASK_RE.search(source.task_id)
-    ]
+    # Backward-compatible alias: manifest generation now includes seg tasks too.
+    return discover_task_images(tasks_root)
 
 
 def build_manifest_records(
@@ -106,7 +94,7 @@ def build_manifest_records(
 ) -> list[ManifestImageRecord]:
     task_root_name = tasks_root.name
     records: list[ManifestImageRecord] = []
-    for source in discover_nonseg_task_images(tasks_root):
+    for source in discover_task_images(tasks_root):
         image_repo = task_image_repo(namespace, source.task_id)
         records.append(
             ManifestImageRecord(
