@@ -20,29 +20,10 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install trusted LoopsBench
-        run: pip install -e .
-
-      - name: Checkout pull request contents
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.sha }}
-          path: pr
-          persist-credentials: false
-
       - name: List changed files
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 scripts/list_pr_changed_files.py --event-path "$GITHUB_EVENT_PATH" > changed_files.txt
-
-      - name: Validate changed task paths
-        run: python3 scripts/check_task_pr_paths.py --paths-file changed_files.txt
 
       - name: Detect changed tasks
         id: changed_tasks
@@ -55,6 +36,29 @@ jobs:
           else
             echo "has_tasks=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Setup Python
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install trusted LoopsBench
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        run: pip install -e .
+
+      - name: Checkout pull request contents
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          persist-credentials: false
+
+      - name: Validate changed task paths
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        run: python3 scripts/check_task_pr_paths.py --paths-file changed_files.txt
 
       - name: Run full contribution validation
         if: steps.changed_tasks.outputs.has_tasks == 'true'
@@ -109,3 +113,7 @@ jobs:
         with:
           name: contribution-validation-artifacts
           path: .artifacts
+
+      - name: No task changes
+        if: steps.changed_tasks.outputs.has_tasks != 'true'
+        run: echo "No task directories changed in this pull request; full task validation was skipped."
