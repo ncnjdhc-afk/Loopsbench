@@ -192,12 +192,3 @@ Only merged tasks are eligible for publication in Benchmarks.
 ## Trusted Publish Step
 
 After a task PR lands on the default branch, the trusted publish workflow reruns validation on the merged revision, records the task version as the repository commit SHA, creates a deterministic task bundle plus SHA-256 checksum, and emits a publish manifest artifact.
-
-If maintainers configure:
-
-- repository variable `LOOPSBENCH_FRONTEND_REPOSITORY`
-- optional repository variable `LOOPSBENCH_FRONTEND_BRANCH`
-- repository secret `LOOPSBENCH_FRONTEND_PUSH_TOKEN`
-
-the same trusted workflow also checks out the frontend repository, regenerates `public/benchmarks-data/`, and pushes the updated snapshot so the website can redeploy from a published task set only.
-If the frontend repository contains `scripts/generate_contribution_data.py`, the same trusted sync also refreshes `src/data/generatedContribution.ts` from the authoritative `tasks/_template/` layout.

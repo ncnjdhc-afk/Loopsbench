@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 import argparse
-import os
 import shlex
 import subprocess
-import sys
 from dataclasses import dataclass
 
 
@@ -84,33 +82,6 @@ def ensure_labels(repo: str, *, dry_run: bool) -> None:
         )
 
 
-def ensure_variable(repo: str, name: str, value: str, *, dry_run: bool) -> None:
-    _run(
-        ["gh", "variable", "set", name, "-R", repo, "--body", value],
-        dry_run=dry_run,
-    )
-
-
-def ensure_secret_from_env(
-    repo: str,
-    *,
-    secret_name: str,
-    env_name: str,
-    dry_run: bool,
-) -> None:
-    secret_value = os.environ.get(env_name, "").strip()
-    if not secret_value:
-        print(
-            f"! Skipping {secret_name}: environment variable {env_name} is not set.",
-            file=sys.stderr,
-        )
-        return
-    _run(
-        ["gh", "secret", "set", secret_name, "-R", repo, "--body", secret_value],
-        dry_run=dry_run,
-    )
-
-
 def configure_branch_protection(
     repo: str,
     *,
@@ -162,17 +133,10 @@ def check_runner_visibility(repo: str, *, dry_run: bool) -> None:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Bootstrap GitHub labels, Actions variables, secrets, and branch protection for LoopsBench."
+        description="Bootstrap GitHub labels and branch protection for LoopsBench."
     )
     parser.add_argument("--repo", default="microsoft/Loopsbench")
     parser.add_argument("--default-branch", default="main")
-    parser.add_argument("--frontend-repo", default="aiki77z/lhvisual")
-    parser.add_argument("--frontend-branch", default="main")
-    parser.add_argument(
-        "--set-frontend-secret-from-env",
-        metavar="ENV_NAME",
-        help="Read LOOPSBENCH_FRONTEND_PUSH_TOKEN from the given environment variable and store it as a repo secret.",
-    )
     parser.add_argument(
         "--configure-branch-protection",
         action="store_true",
@@ -194,26 +158,6 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = _build_parser().parse_args()
     ensure_labels(args.repo, dry_run=args.dry_run)
-    ensure_variable(
-        args.repo,
-        "LOOPSBENCH_FRONTEND_REPOSITORY",
-        args.frontend_repo,
-        dry_run=args.dry_run,
-    )
-    ensure_variable(
-        args.repo,
-        "LOOPSBENCH_FRONTEND_BRANCH",
-        args.frontend_branch,
-        dry_run=args.dry_run,
-    )
-
-    if args.set_frontend_secret_from_env:
-        ensure_secret_from_env(
-            args.repo,
-            secret_name="LOOPSBENCH_FRONTEND_PUSH_TOKEN",
-            env_name=args.set_frontend_secret_from_env,
-            dry_run=args.dry_run,
-        )
 
     if args.configure_branch_protection:
         configure_branch_protection(
