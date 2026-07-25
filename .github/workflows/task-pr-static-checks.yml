@@ -54,6 +54,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: pr
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
 
       - name: Validate Proposal URL
         if: steps.changed_tasks.outputs.has_tasks == 'true'
