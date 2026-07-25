@@ -48,6 +48,11 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optional output root for oracle runs.",
     )
+    parser.add_argument(
+        "--require-provenance",
+        action="store_true",
+        help="Require publish-grade provenance fields in task.yaml.",
+    )
     return parser
 
 
@@ -59,6 +64,7 @@ def main() -> int:
         run_strict_per_pr=False if args.static_only else args.run_strict_per_pr,
         run_oracle=False if args.static_only else args.run_oracle,
         oracle_output_root=args.oracle_output_root,
+        require_provenance=args.require_provenance,
     )
 
     payload = report.to_dict()

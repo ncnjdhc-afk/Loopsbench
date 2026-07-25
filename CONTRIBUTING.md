@@ -151,6 +151,11 @@ The PR must link the approved Proposal issue and explain:
 - license / redistribution status
 - known limitations
 
+The final `task.yaml` in the PR must carry the publish-grade provenance fields
+(`source_url`, `source_repository_url`, `source_base_revision`, `proposal_url`,
+and `license_status`). A merged task without them will fail the trusted publish
+workflow and will not be published to Benchmarks.
+
 One PR should introduce or revise one task unless maintainers explicitly ask otherwise.
 
 ## CI Structure

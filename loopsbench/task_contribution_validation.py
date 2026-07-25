@@ -22,6 +22,14 @@ REQUIRED_CONTRIBUTION_FILES = (
     "slug_diff_map.json",
 )
 
+REQUIRED_PROVENANCE_FIELDS = (
+    "source_url",
+    "source_repository_url",
+    "source_base_revision",
+    "proposal_url",
+    "license_status",
+)
+
 SENSITIVE_BASE_NAMES = {
     "tests",
     "gold_patches",
@@ -108,6 +116,14 @@ def _load_yaml(path: Path) -> Any:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
+def missing_provenance_fields(raw_payload: dict[str, Any]) -> list[str]:
+    return [
+        field_name
+        for field_name in REQUIRED_PROVENANCE_FIELDS
+        if not str(raw_payload.get(field_name) or "").strip()
+    ]
+
+
 def _validate_acyclic(
     *,
     node_ids: list[str],
@@ -145,7 +161,12 @@ def _validate_acyclic(
         )
 
 
-def _validate_task_yaml(task_dir: Path, report: TaskContributionReport) -> None:
+def _validate_task_yaml(
+    task_dir: Path,
+    report: TaskContributionReport,
+    *,
+    require_provenance: bool = False,
+) -> None:
     task_yaml = task_dir / "task.yaml"
     try:
         raw_payload = yaml.safe_load(task_yaml.read_text(encoding="utf-8")) or {}
@@ -199,18 +220,16 @@ def _validate_task_yaml(task_dir: Path, report: TaskContributionReport) -> None:
             path=task_yaml,
         )
 
-    provenance_fields = {
-        "source_url": raw_payload.get("source_url"),
-        "source_repository_url": raw_payload.get("source_repository_url"),
-        "source_base_revision": raw_payload.get("source_base_revision"),
-        "proposal_url": raw_payload.get("proposal_url"),
-        "license_status": raw_payload.get("license_status"),
-    }
-    present_provenance = {
-        key for key, value in provenance_fields.items() if str(value or "").strip()
-    }
-    if present_provenance and len(present_provenance) != len(provenance_fields):
-        for key in sorted(set(provenance_fields) - present_provenance):
+    missing_fields = missing_provenance_fields(raw_payload)
+    if require_provenance and missing_fields:
+        for key in missing_fields:
+            report.add_issue(
+                "missing_publish_provenance_field",
+                f"Publish validation requires `{key}` to be set in task.yaml.",
+                path=task_yaml,
+            )
+    elif missing_fields and len(missing_fields) != len(REQUIRED_PROVENANCE_FIELDS):
+        for key in missing_fields:
             report.add_issue(
                 "missing_provenance_field",
                 f"task.yaml includes provenance metadata, so `{key}` must also be set.",
@@ -653,7 +672,9 @@ def _validate_task_tree(task_dir: Path, report: TaskContributionReport) -> None:
                 )
 
 
-def validate_task_contribution(task_dir: Path) -> TaskContributionReport:
+def validate_task_contribution(
+    task_dir: Path, *, require_provenance: bool = False
+) -> TaskContributionReport:
     resolved_task_dir = task_dir.resolve()
     report = TaskContributionReport(
         task_id=resolved_task_dir.name,
@@ -664,7 +685,9 @@ def validate_task_contribution(task_dir: Path) -> TaskContributionReport:
     if any(issue.code == "missing_task_dir" for issue in report.issues):
         return report
 
-    _validate_task_yaml(resolved_task_dir, report)
+    _validate_task_yaml(
+        resolved_task_dir, report, require_provenance=require_provenance
+    )
     unit_ids = _validate_unit_dag(resolved_task_dir, report)
     _validate_module_dag(resolved_task_dir, report)
     requirement_stems = _validate_requirements(resolved_task_dir, unit_ids, report)
@@ -696,8 +719,11 @@ def run_task_contribution_checks(
     run_strict_per_pr: bool = False,
     run_oracle: bool = False,
     oracle_output_root: Path | None = None,
+    require_provenance: bool = False,
 ) -> TaskContributionReport:
-    report = validate_task_contribution(task_dir)
+    report = validate_task_contribution(
+        task_dir, require_provenance=require_provenance
+    )
     repo_root = Path(__file__).resolve().parents[1]
     task_id = task_dir.resolve().name
     tasks_root = task_dir.resolve().parent

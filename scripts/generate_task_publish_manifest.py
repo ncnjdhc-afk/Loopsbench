@@ -18,6 +18,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from loopsbench.handlers.trial_handler import Task  # noqa: E402
+from loopsbench.task_contribution_validation import (  # noqa: E402
+    missing_provenance_fields,
+)
 
 DEFAULT_REPO_HTML_URL = "https://github.com/microsoft/Loopsbench"
 
@@ -140,6 +143,12 @@ def build_publish_record(
 ) -> dict[str, Any]:
     resolved_task_dir = task_dir.resolve()
     raw_task = _read_yaml(resolved_task_dir / "task.yaml")
+    missing_fields = missing_provenance_fields(raw_task)
+    if missing_fields:
+        missing = ", ".join(f"`{field_name}`" for field_name in missing_fields)
+        raise ValueError(
+            f"{resolved_task_dir} is not publishable; missing provenance fields: {missing}."
+        )
     task = Task.model_validate(raw_task)
     module_dag = _read_yaml(resolved_task_dir / "module_dag.yaml")
     unit_dag = _read_json(resolved_task_dir / "unit_dag.json")

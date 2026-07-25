@@ -23,8 +23,9 @@ run_tests_in_same_shell: false
 expert_time_estimate_min: 90
 junior_time_estimate_min: 240
 
-# Optional provenance metadata for the GitHub-native contribution workflow.
-# Uncomment and fill these fields before opening the task PR.
+# Publish-required provenance metadata for the GitHub-native contribution workflow.
+# Uncomment and fill these fields before opening the task PR. A merged task without
+# these fields will fail the trusted publish workflow.
 #
 # source_url: https://github.com/example/project/pull/123
 # source_repository_url: https://github.com/example/project

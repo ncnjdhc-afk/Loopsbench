@@ -56,6 +56,7 @@ jobs:
               --run-tasks-validate \
               --run-strict-per-pr \
               --run-oracle \
+              --require-provenance \
               --oracle-output-root ".artifacts/oracle/$task_id" \
               --json-out ".artifacts/contribution-validation/$task_id.json"
           done < changed_tasks.txt

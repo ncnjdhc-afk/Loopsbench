@@ -57,3 +57,8 @@ max_test_timeout_sec: 300.0
 run_tests_in_same_shell: false
 expert_time_estimate_min: 120
 junior_time_estimate_min: 480
+source_url: https://example.com/loopsbench/example-task-source
+source_repository_url: https://github.com/example/loopsbench-example-task
+source_base_revision: example-base-revision
+proposal_url: https://github.com/microsoft/Loopsbench/issues/1
+license_status: Placeholder provenance for the example task; replace with real provenance on published contributions.

@@ -145,6 +145,28 @@ def test_validate_task_contribution_accepts_valid_task(tmp_path: Path) -> None:
     assert report.issues == []
 
 
+def test_validate_task_contribution_publish_mode_requires_provenance(
+    tmp_path: Path,
+) -> None:
+    task_dir = _write_valid_task(tmp_path)
+
+    report = validate_task_contribution(task_dir, require_provenance=True)
+
+    assert report.ok is False
+    missing_fields = {
+        issue.message.split("`")[1]
+        for issue in report.issues
+        if issue.code == "missing_publish_provenance_field"
+    }
+    assert missing_fields == {
+        "source_url",
+        "source_repository_url",
+        "source_base_revision",
+        "proposal_url",
+        "license_status",
+    }
+
+
 def test_validate_task_contribution_fails_missing_required_field(
     tmp_path: Path,
 ) -> None:

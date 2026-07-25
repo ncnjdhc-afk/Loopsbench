@@ -3,10 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import yaml
 
 from scripts.ensure_publish_context import publish_allowed
-from scripts.generate_task_publish_manifest import generate_publish_manifest
+from scripts.generate_task_publish_manifest import (
+    build_publish_record,
+    generate_publish_manifest,
+)
 
 
 def _write_text(path: Path, content: str) -> None:
@@ -176,3 +180,22 @@ def test_generate_publish_manifest_writes_metadata_and_bundle(tmp_path: Path) ->
     metadata_path = output_dir / "tasks" / "task_publish_fixture.json"
     assert bundle_path.is_file()
     assert metadata_path.is_file()
+
+
+def test_build_publish_record_rejects_missing_publish_provenance(
+    tmp_path: Path,
+) -> None:
+    task_dir = _write_valid_task(tmp_path)
+    task_yaml_path = task_dir / "task.yaml"
+    task_yaml = yaml.safe_load(task_yaml_path.read_text(encoding="utf-8"))
+    task_yaml.pop("proposal_url")
+    task_yaml_path.write_text(
+        yaml.safe_dump(task_yaml, sort_keys=False), encoding="utf-8"
+    )
+
+    with pytest.raises(ValueError, match="missing provenance fields: `proposal_url`"):
+        build_publish_record(
+            task_dir,
+            output_dir=tmp_path / "publish-output",
+            git_sha="1234567890abcdef1234567890abcdef12345678",
+        )
