@@ -6,31 +6,55 @@ import importlib
 
 from loopsbench.agents.agent_name import AgentName
 from loopsbench.agents.base_agent import BaseAgent
-from loopsbench.agents.claude_code.claude_code_agent import ClaudeCodeAgent
-from loopsbench.agents.codex.codex_agent import CodexAgent
-from loopsbench.agents.copilot.copilot_agent import CopilotAgent
-from loopsbench.agents.cursor.cursor_agent import CursorAgent
-from loopsbench.agents.mini_swe_agent.mini_swe_agent import MiniSweAgent
-from loopsbench.agents.openhands.openhands_agent import OpenHandsAgent
-from loopsbench.agents.oracle_agent import OracleAgent
-from loopsbench.agents.qwen_code.qwen_code_agent import QwenCodeAgent
-from loopsbench.agents.swe_agent.swe_agent import SweAgent
 
 
 class AgentFactory:
     """Registry and factory for agent classes."""
 
-    _AGENTS: dict[AgentName, type[BaseAgent]] = {
-        AgentName.ORACLE: OracleAgent,
-        AgentName.MINI_SWE_AGENT: MiniSweAgent,
-        AgentName.SWE_AGENT: SweAgent,
-        AgentName.OPENHANDS: OpenHandsAgent,
-        AgentName.CLAUDE_CODE: ClaudeCodeAgent,
-        AgentName.CURSOR: CursorAgent,
-        AgentName.CODEX: CodexAgent,
-        AgentName.QWEN_CODE: QwenCodeAgent,
-        AgentName.COPILOT: CopilotAgent,
+    _AGENT_IMPORTS: dict[AgentName, tuple[str, str]] = {
+        AgentName.ORACLE: ("loopsbench.agents.oracle_agent", "OracleAgent"),
+        AgentName.MINI_SWE_AGENT: (
+            "loopsbench.agents.mini_swe_agent.mini_swe_agent",
+            "MiniSweAgent",
+        ),
+        AgentName.SWE_AGENT: ("loopsbench.agents.swe_agent.swe_agent", "SweAgent"),
+        AgentName.OPENHANDS: (
+            "loopsbench.agents.openhands.openhands_agent",
+            "OpenHandsAgent",
+        ),
+        AgentName.CLAUDE_CODE: (
+            "loopsbench.agents.claude_code.claude_code_agent",
+            "ClaudeCodeAgent",
+        ),
+        AgentName.CURSOR: ("loopsbench.agents.cursor.cursor_agent", "CursorAgent"),
+        AgentName.CODEX: ("loopsbench.agents.codex.codex_agent", "CodexAgent"),
+        AgentName.QWEN_CODE: (
+            "loopsbench.agents.qwen_code.qwen_code_agent",
+            "QwenCodeAgent",
+        ),
+        AgentName.COPILOT: (
+            "loopsbench.agents.copilot.copilot_agent",
+            "CopilotAgent",
+        ),
     }
+
+    @classmethod
+    def _load_built_in_agent_class(
+        cls, agent_name: AgentName
+    ) -> type[BaseAgent] | None:
+        module_spec = cls._AGENT_IMPORTS.get(agent_name)
+        if module_spec is None:
+            return None
+
+        module_path, class_name = module_spec
+        module = importlib.import_module(module_path)
+        agent_cls = getattr(module, class_name)
+        if not issubclass(agent_cls, BaseAgent):
+            raise ValueError(
+                f"Built-in agent `{agent_name.value}` resolved to "
+                f"`{module_path}:{class_name}`, which is not a BaseAgent subclass."
+            )
+        return agent_cls
 
     @classmethod
     def get_agent_class(
@@ -61,7 +85,7 @@ class AgentFactory:
             return agent_cls
 
         if agent_name is not None:
-            agent_cls = cls._AGENTS.get(agent_name)
+            agent_cls = cls._load_built_in_agent_class(agent_name)
             if agent_cls is None:
                 raise ValueError(
                     f"Unknown agent: {agent_name}. "

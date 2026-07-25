@@ -1,0 +1,113 @@
+name: Task PR Static Checks
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-task-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install trusted LoopsBench
+        run: pip install -e .
+
+      - name: Checkout pull request contents
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          persist-credentials: false
+
+      - name: List changed files
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/list_pr_changed_files.py --event-path "$GITHUB_EVENT_PATH" > changed_files.txt
+
+      - name: Validate Proposal URL
+        run: python3 scripts/check_pr_proposal_url.py --event-path "$GITHUB_EVENT_PATH" --expected-repo "${{ github.repository }}"
+
+      - name: Validate PR template fields
+        run: python3 scripts/check_task_pr_template.py --event-path "$GITHUB_EVENT_PATH"
+
+      - name: Validate changed task paths
+        run: python3 scripts/check_task_pr_paths.py --paths-file changed_files.txt
+
+      - name: Detect changed tasks
+        id: changed_tasks
+        shell: bash
+        run: |
+          python3 scripts/list_changed_tasks.py \
+            --paths-file changed_files.txt | tee changed_tasks.txt
+          if [ -s changed_tasks.txt ]; then
+            echo "has_tasks=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tasks=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run static task validation
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        shell: bash
+        run: |
+          mkdir -p .artifacts/static-validation
+          while IFS= read -r task_dir; do
+            [ -n "$task_dir" ] || continue
+            task_id="$(basename "$task_dir")"
+            python3 scripts/validate_task_contribution.py \
+              --task-dir "pr/$task_dir" \
+              --run-tasks-validate \
+              --json-out ".artifacts/static-validation/$task_id.json"
+          done < changed_tasks.txt
+
+      - name: Write task overview summary
+        if: always() && steps.changed_tasks.outputs.has_tasks == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          report_dir = Path(".artifacts/static-validation")
+          lines = [
+              "## Task PR Static Summary",
+              "",
+              "| Task ID | Static validation | `loopsbench tasks validate` |",
+              "| --- | --- | --- |",
+          ]
+          for report_path in sorted(report_dir.glob("*.json")):
+              payload = json.loads(report_path.read_text(encoding="utf-8"))
+              commands = {item["name"]: item for item in payload.get("commands", [])}
+              static_result = "passed" if not payload.get("issues") else "failed"
+              lhb_result = "passed" if commands.get("loopsbench_tasks_validate", {}).get("returncode") == 0 else "failed"
+              lines.append(f"| `{payload['task_id']}` | {static_result} | {lhb_result} |")
+          summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Upload static validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: task-pr-static-artifacts
+          path: .artifacts
+
+      - name: No task changes
+        if: steps.changed_tasks.outputs.has_tasks != 'true'
+        run: echo "No task directories changed in this pull request."

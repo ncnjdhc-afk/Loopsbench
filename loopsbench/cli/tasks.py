@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 from typer import Option, Typer
 
-from loopsbench.handlers.trial_handler import Task, TaskPaths
+from loopsbench.handlers.trial_handler import Task
 
 tasks_app = Typer(no_args_is_help=True)
 console = Console()
@@ -21,11 +21,10 @@ console = Console()
 # loopsbench tasks list
 # ---------------------------------------------------------------------------
 
+
 @tasks_app.command("list")
 def list_tasks(
-    tasks_dir: Annotated[
-        Path, Option(help="Path to tasks directory")
-    ] = Path("tasks"),
+    tasks_dir: Annotated[Path, Option(help="Path to tasks directory")] = Path("tasks"),
 ):
     """List all tasks with their metadata."""
     if not tasks_dir.exists():
@@ -91,11 +90,10 @@ def list_tasks(
 # loopsbench tasks validate
 # ---------------------------------------------------------------------------
 
+
 @tasks_app.command()
 def validate(
-    tasks_dir: Annotated[
-        Path, Option(help="Path to tasks directory")
-    ] = Path("tasks"),
+    tasks_dir: Annotated[Path, Option(help="Path to tasks directory")] = Path("tasks"),
     task_id: Annotated[
         str | None, Option("-t", "--task-id", help="Validate a single task")
     ] = None,
@@ -109,14 +107,17 @@ def validate(
         task_dirs = [tasks_dir / task_id]
     else:
         task_dirs = sorted(
-            p for p in tasks_dir.iterdir()
-            if p.is_dir() and not p.name.startswith("_")
+            p for p in tasks_dir.iterdir() if p.is_dir() and not p.name.startswith("_")
         )
 
     required_files = [
         "task.yaml",
         "Dockerfile",
+        "docker-compose.yaml",
         "run-tests.sh",
+        "unit_dag.json",
+        "module_dag.yaml",
+        "slug_diff_map.json",
         "solution.sh",
     ]
 
@@ -124,6 +125,14 @@ def validate(
     for td in task_dirs:
         task_name = td.name
         issues: list[str] = []
+
+        if not td.exists():
+            issues.append("Task directory does not exist")
+            errors += 1
+            console.print(f"[red]\u274c {task_name}[/red]")
+            for issue in issues:
+                console.print(f"    {issue}")
+            continue
 
         # Check required files
         for fname in required_files:
@@ -142,10 +151,12 @@ def validate(
                     issues.append("Empty instruction in task.yaml")
                 if task.author_name == "unknown":
                     issues.append("Missing author_name in task.yaml")
+                if task.author_email == "unknown":
+                    issues.append("Missing author_email in task.yaml")
                 if task.difficulty.value not in ("easy", "medium", "hard"):
-                    issues.append(
-                        f"Invalid difficulty: {task.difficulty.value}"
-                    )
+                    issues.append(f"Invalid difficulty: {task.difficulty.value}")
+                if not task.parser_name:
+                    issues.append("Missing parser_name in task.yaml")
 
                 compose_file = Path(task.docker.compose_file)
                 compose_path = td / compose_file
@@ -163,6 +174,14 @@ def validate(
         if not test_dir.exists() or not list(test_dir.iterdir()):
             issues.append("Missing or empty tests/ directory")
 
+        base_dir = td / "base"
+        if not base_dir.exists():
+            issues.append("Missing base/ directory")
+
+        requirements_dir = td / "requirements"
+        if not requirements_dir.exists() or not list(requirements_dir.glob("*.yaml")):
+            issues.append("Missing or empty requirements/ directory")
+
         if issues:
             errors += 1
             console.print(f"[red]\u274c {task_name}[/red]")
@@ -173,9 +192,7 @@ def validate(
 
     console.print()
     if errors:
-        console.print(
-            f"[bold red]{errors} task(s) have validation errors.[/bold red]"
-        )
+        console.print(f"[bold red]{errors} task(s) have validation errors.[/bold red]")
         raise typer.Exit(1)
     else:
         console.print(
@@ -187,29 +204,22 @@ def validate(
 # loopsbench tasks create
 # ---------------------------------------------------------------------------
 
+
 @tasks_app.command()
 def create(
-    task_id: Annotated[
-        str, typer.Argument(help="Name/ID for the new task")
-    ],
-    tasks_dir: Annotated[
-        Path, Option(help="Path to tasks directory")
-    ] = Path("tasks"),
+    task_id: Annotated[str, typer.Argument(help="Name/ID for the new task")],
+    tasks_dir: Annotated[Path, Option(help="Path to tasks directory")] = Path("tasks"),
 ):
     """Create a new task from the template."""
     template_dir = tasks_dir / "_template"
     target_dir = tasks_dir / task_id
 
     if target_dir.exists():
-        console.print(
-            f"[red]Task directory {target_dir} already exists.[/red]"
-        )
+        console.print(f"[red]Task directory {target_dir} already exists.[/red]")
         raise typer.Exit(1)
 
     if not template_dir.exists():
-        console.print(
-            f"[red]Template directory {template_dir} not found.[/red]"
-        )
+        console.print(f"[red]Template directory {template_dir} not found.[/red]")
         raise typer.Exit(1)
 
     shutil.copytree(template_dir, target_dir)

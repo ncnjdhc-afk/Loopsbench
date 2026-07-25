@@ -1,0 +1,178 @@
+name: Task Publish
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  publish-tasks:
+    runs-on: [self-hosted, loopsbench-sandbox]
+    timeout-minutes: 720
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify trusted publish context
+        run: python3 scripts/ensure_publish_context.py --event-name "${{ github.event_name }}" --ref-name "${{ github.ref_name }}" --default-branch main
+
+      - name: Install LoopsBench
+        run: pip install -e .
+
+      - name: Detect changed tasks
+        id: changed_tasks
+        shell: bash
+        run: |
+          python3 scripts/list_changed_tasks.py \
+            --repo-root "$PWD" \
+            --base-sha "${{ github.event.before }}" \
+            --head-sha "${{ github.sha }}" | tee changed_tasks.txt
+          if [ -s changed_tasks.txt ]; then
+            echo "has_tasks=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tasks=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Re-run full validation on merged tasks
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        shell: bash
+        run: |
+          mkdir -p .artifacts/contribution-validation
+          while IFS= read -r task_dir; do
+            [ -n "$task_dir" ] || continue
+            task_id="$(basename "$task_dir")"
+            python3 scripts/validate_task_contribution.py \
+              --task-dir "$task_dir" \
+              --run-tasks-validate \
+              --run-strict-per-pr \
+              --run-oracle \
+              --oracle-output-root ".artifacts/oracle/$task_id" \
+              --json-out ".artifacts/contribution-validation/$task_id.json"
+          done < changed_tasks.txt
+
+      - name: Generate publish manifest and bundles
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        shell: bash
+        run: |
+          python3 scripts/generate_task_publish_manifest.py \
+            --tasks-file changed_tasks.txt \
+            --git-sha "${{ github.sha }}" \
+            --repo-root "$PWD" \
+            --repo-html-url "${{ github.server_url }}/${{ github.repository }}" \
+            --output-dir .artifacts/publish \
+            --json-out .artifacts/publish/index.json
+
+      - name: Generate benchmark snapshot artifact
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        shell: bash
+        run: |
+          if [ -f lhvisual/scripts/generate_benchmarks_data.py ]; then
+            python3 lhvisual/scripts/generate_benchmarks_data.py
+            mkdir -p .artifacts/frontend
+            tar -czf .artifacts/frontend/benchmarks-data.tar.gz -C lhvisual/public benchmarks-data
+          else
+            echo "No sibling lhvisual benchmark generator found; skipping frontend snapshot artifact." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Detect frontend sync configuration
+        if: steps.changed_tasks.outputs.has_tasks == 'true'
+        id: frontend_sync
+        shell: bash
+        env:
+          LOOPSBENCH_FRONTEND_REPOSITORY: ${{ vars.LOOPSBENCH_FRONTEND_REPOSITORY }}
+          LOOPSBENCH_FRONTEND_PUSH_TOKEN: ${{ secrets.LOOPSBENCH_FRONTEND_PUSH_TOKEN }}
+        run: |
+          if [ -n "${LOOPSBENCH_FRONTEND_REPOSITORY}" ] && [ -n "${LOOPSBENCH_FRONTEND_PUSH_TOKEN}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout frontend repo for benchmark sync
+        if: steps.changed_tasks.outputs.has_tasks == 'true' && steps.frontend_sync.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.LOOPSBENCH_FRONTEND_REPOSITORY }}
+          ref: ${{ vars.LOOPSBENCH_FRONTEND_BRANCH || 'main' }}
+          token: ${{ secrets.LOOPSBENCH_FRONTEND_PUSH_TOKEN }}
+          path: frontend-repo
+
+      - name: Sync frontend benchmarks snapshot
+        if: steps.changed_tasks.outputs.has_tasks == 'true' && steps.frontend_sync.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          mkdir -p .artifacts/frontend
+          python3 scripts/sync_frontend_benchmarks_repo.py \
+            --frontend-repo-dir frontend-repo \
+            --generator-script frontend-repo/scripts/generate_benchmarks_data.py \
+            --tasks-root "$PWD/tasks" \
+            --source-sha "${{ github.sha }}" \
+            --push \
+            --push-branch "${{ vars.LOOPSBENCH_FRONTEND_BRANCH || 'main' }}" \
+            > .artifacts/frontend/sync.json
+
+      - name: Write publish summary
+        if: always() && steps.changed_tasks.outputs.has_tasks == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          index_path = Path(".artifacts/publish/index.json")
+          if not index_path.exists():
+              summary_path.write_text("## Task Publish\n\nPublish manifest was not generated.\n", encoding="utf-8")
+              raise SystemExit(0)
+
+          payload = json.loads(index_path.read_text(encoding="utf-8"))
+          lines = [
+              "## Task Publish",
+              "",
+              f"- Published task records: {payload.get('taskCount', 0)}",
+              f"- Version SHA: `{payload.get('version', '')}`",
+              "",
+              "| Task ID | Version | Bundle SHA-256 |",
+              "| --- | --- | --- |",
+          ]
+          for task in payload.get("tasks", []):
+              lines.append(
+                  f"| `{task['taskId']}` | `{task['version'][:12]}` | `{task['bundle']['sha256'][:16]}...` |"
+              )
+          frontend_sync_path = Path(".artifacts/frontend/sync.json")
+          if frontend_sync_path.exists():
+              sync_payload = json.loads(frontend_sync_path.read_text(encoding="utf-8"))
+              lines.extend(
+                  [
+                      "",
+                      "### Frontend Sync",
+                      "",
+                      f"- Changed: `{sync_payload.get('changed')}`",
+                      f"- Pushed: `{sync_payload.get('pushed')}`",
+                      f"- Commit SHA: `{sync_payload.get('commit_sha')}`",
+                  ]
+              )
+          summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Upload publish artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: task-publish-artifacts
+          path: .artifacts
+
+      - name: No task changes
+        if: steps.changed_tasks.outputs.has_tasks != 'true'
+        run: echo "No task directories changed on this push."

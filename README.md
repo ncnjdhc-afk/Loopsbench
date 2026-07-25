@@ -1,44 +1,36 @@
 # LoopsBench
 
-`LoopsBench` is currently a trimmed-down working copy of the LoopsBench harness/core codebase.
+LoopsBench is the canonical source for both the harness and the benchmark task definitions.
 
-This repository contains:
+This repository now includes:
 - the Python package under `loopsbench/`
-- repository-level tests under `tests/`
+- checked-in task assets under `tasks/`
+- GitHub-native contribution workflows under `.github/`
+- repository tests under `tests/`
 - packaging metadata such as `pyproject.toml`, `uv.lock`, and `registry.json`
 
-This repository does **not** currently include the full benchmark dataset checkout. In particular, there is no top-level `tasks/`, `docs/`, `examples/`, `runs/`, or other benchmark asset directories in this copy.
-
-## Current Layout
+## Repository Layout
 
 ```text
 LoopsBench/
+  .github/
+    ISSUE_TEMPLATE/
+    workflows/
+    pull_request_template.md
   loopsbench/   # Core package, CLI, harness, Docker helpers
-  tests/        # Repository-level harness-focused tests
+  scripts/      # Contribution validation, publish, and sync helpers
+  tasks/
+    _template/  # Starting point for new tasks
+    task_tcp_course_stack/
+  tests/
   pyproject.toml
   registry.json
   uv.lock
-  README.md
 ```
-
-The current retained test suite is focused on core harness and Docker behavior:
-- `tests/test_docker_compose_manager.py`
-- `tests/test_harness_docker_image_metadata.py`
-- `tests/test_repo_profiles.py`
-- `tests/test_run_docker_image_strategy.py`
-
-## Naming
-
-The repository, Python package, and CLI now use the LoopsBench name consistently:
-- Repository: `LoopsBench`
-- Python package: `loopsbench`
-- CLI command: `loopsbench`
 
 ## Installation
 
 ### Option A: `uv`
-
-Create the development environment with `uv`:
 
 ```bash
 uv sync --dev
@@ -47,8 +39,6 @@ uv run loopsbench --help
 
 ### Option B: editable `pip` install
 
-If you prefer a standard virtual environment plus editable install:
-
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -56,226 +46,120 @@ pip install -e .
 loopsbench --help
 ```
 
-If you want to invoke the CLI as a module instead of using the installed entry point:
+Module-style invocation also works:
 
 ```bash
 python -m loopsbench.cli.main --help
 ```
 
-## External task checkout
+## Submit a Task
 
-This checkout does not ship with a top-level `tasks/` directory, so real harness runs need an external task checkout.
+LoopsBench uses a GitHub-native contribution flow. The website's `Submit Task` page should link to this repository and the issue form below; contributors do not upload ZIP archives or finished task bundles through the website.
 
-The recommended distribution channel for task data is the repository's [GitHub Releases](https://github.com/microsoft/Loopsbench/releases) page.
+1. Review the task requirements in [CONTRIBUTING.md](CONTRIBUTING.md), `tasks/_template/`, and the example task `tasks/task_tcp_course_stack/`.
+2. Open a proposal issue with `.github/ISSUE_TEMPLATE/task-proposal.yml`.
+3. Wait for maintainer approval.
+4. Build the task in your fork under `tasks/task_<id>/`.
+5. Open a pull request using `.github/pull_request_template.md`.
+6. Pass static validation, strict per-PR validation, Oracle, and maintainer review before merge.
 
-Download a release asset named like `loopsbench-tasks-<commit>.tar.zst` together with its checksum file `loopsbench-tasks-<commit>.tar.zst.sha256`.
+Create a new task from the checked-in template:
 
 ```bash
-sha256sum -c loopsbench-tasks-<commit>.tar.zst.sha256
-tar --zstd -xf loopsbench-tasks-<commit>.tar.zst
+loopsbench tasks create task_my_new_case
 ```
 
-After extraction, you will have a top-level `tasks/` directory that can be passed to the CLI with `--dataset-path` or `--tasks-dir`.
+Run the expected local validation commands before opening a PR:
+
+```bash
+python3 scripts/validate_task_contribution.py --task-dir tasks/task_my_new_case --static-only
+loopsbench tasks validate --task-id task_my_new_case
+python3 scripts/validate_per_pr.py --task-dir tasks/task_my_new_case --strict-fail-to-pass
+loopsbench run --agent oracle --task-id task_my_new_case --dataset-path tasks --docker-image-strategy local-build
+```
 
 ## Running LoopsBench
 
-Basic examples:
+Use the checked-in `tasks/` tree directly:
 
 ```bash
-uv run loopsbench --help
-uv run loopsbench tasks list --tasks-dir /path/to/tasks
-uv run loopsbench tasks validate --tasks-dir /path/to/tasks
-uv run loopsbench run --dataset-path /path/to/tasks --agent oracle
+loopsbench tasks list --tasks-dir tasks
+loopsbench tasks validate --tasks-dir tasks
+loopsbench run --dataset-path tasks --task-id task_tcp_course_stack --agent oracle --docker-image-strategy local-build
 ```
 
-Or, if you installed with `pip install -e .`:
+If you prefer `uv`:
 
 ```bash
-loopsbench --help
-loopsbench tasks list --tasks-dir /path/to/tasks
-loopsbench run --dataset-path /path/to/tasks --agent oracle
+uv run loopsbench tasks list --tasks-dir tasks
+uv run loopsbench run --dataset-path tasks --task-id task_tcp_course_stack --agent oracle --docker-image-strategy local-build
 ```
 
-Actual harness runs still require a compatible task checkout and a working Docker setup.
+## Docker Image Strategies
 
-## Docker image strategies
+The harness supports three Docker image modes through `loopsbench run` and `loopsbench runs create`:
 
-The harness supports three Docker image modes through `loopsbench run` / `loopsbench runs create`:
+- `remote`: pull prebuilt task images from a remote registry
+- `local-build`: build task images locally from each task's `docker-compose.yaml`
+- `local-existing`: use already-present local images without rebuilding
 
-- `--docker-image-strategy remote`
-  - pull prebuilt task images from a remote registry
-- `--docker-image-strategy local-build`
-  - build task images locally from each task's `docker-compose.yaml`
-- `--docker-image-strategy local-existing`
-  - use already-present local images without rebuilding
-
-### Remote mode
-
-Remote mode is the default strategy, but it requires a namespace:
+Example remote run:
 
 ```bash
-uv run loopsbench run \
-  --dataset-path /path/to/tasks \
-  --task-id task_compiler \
+loopsbench run \
+  --dataset-path tasks \
+  --task-id task_tcp_course_stack \
   --agent oracle \
   --docker-image-strategy remote \
-  --docker-image-namespace dolischwer \
+  --docker-image-namespace your-namespace \
   --docker-image-tag latest
 ```
 
-Important details:
-- `--docker-image-namespace` is required in `remote` mode.
-- `--docker-image-tag` is optional; if omitted, it defaults to `latest`.
-- Remote task images are resolved as:
-
-```text
-<namespace>/loopsbench-<normalized-task-id>:<tag>
-```
-
-For example:
-
-```text
-dolischwer/loopsbench-task-compiler:latest
-```
-
-### Local build mode
-
-Use local build mode when you want the harness to build images directly from the external task checkout:
+Example local build:
 
 ```bash
-uv run loopsbench run \
-  --dataset-path /path/to/tasks \
-  --task-id task_compiler \
+loopsbench run \
+  --dataset-path tasks \
+  --task-id task_tcp_course_stack \
   --agent oracle \
   --docker-image-strategy local-build
 ```
 
-### Local existing mode
+## Publish and Release Model
 
-Use local existing mode when the correct task image is already present locally:
+Merged task contributions remain source-controlled under `tasks/`. After merge, the trusted publish workflow:
 
-```bash
-uv run loopsbench run \
-  --dataset-path /path/to/tasks \
-  --task-id task_compiler \
-  --agent oracle \
-  --docker-image-strategy local-existing
-```
+- reruns validation on the default branch
+- records the task version as the merge commit SHA
+- emits deterministic task bundles plus SHA-256 checksums
+- can optionally sync published benchmark snapshots into the frontend repository
 
-The legacy `--no-rebuild` flag is still accepted, but it is only a compatibility alias for `--docker-image-strategy local-existing`.
+GitHub Releases remain a distribution channel for published task bundles, but they are not the review entry point. Proposal issues and pull requests are the review entry points.
 
-## What works in this copy
+## Testing Quick Reference
 
-This checkout is useful for:
-- editing and reading the harness, CLI, Docker integration, agent integrations, parsers, and helper utilities
-- running the retained harness-focused repository tests
-- validating Docker image strategy and task image resolution behavior
-
-Examples:
+Repository-level harness tests:
 
 ```bash
-uv run python -m pytest tests/test_docker_compose_manager.py -q
-uv run python -m pytest tests/test_harness_docker_image_metadata.py -q
-uv run python -m pytest tests/test_run_docker_image_strategy.py -q
-```
-
-## Missing benchmark data
-
-Many commands in the codebase still assume a full benchmark checkout and look for a top-level `tasks/` directory.
-
-In this trimmed repository:
-- `loopsbench tasks ...` and `loopsbench run ...` are still available, but they need an external dataset/task directory to be useful
-- some harness flows only make sense when a compatible external task tree is available
-
-If you want to use those workflows, add or mount a compatible `tasks/` tree beside this repository, or pass the task path explicitly via `--tasks-dir` or `--dataset-path`.
-
-## Current limitations
-
-This repository still does not vendor the benchmark dataset itself, so task execution requires an external `tasks/` checkout.
-
-## Testing quick reference
-
-The remaining repository tests are intended to validate core harness behavior, not task datasets themselves:
-
-```bash
-uv run python -m pytest \
+python -m pytest \
   tests/test_docker_compose_manager.py \
   tests/test_harness_docker_image_metadata.py \
   tests/test_repo_profiles.py \
   tests/test_run_docker_image_strategy.py -q
 ```
 
-These tests are useful for verifying:
-- Docker startup behavior
-- remote/local image strategy selection
-- task image metadata recording
-- supporting harness test-selection helpers
-
-They do **not** replace running the harness against a real external task checkout.
-
-## Useful CLI options for real runs
-
-A few options that are especially relevant in this trimmed checkout:
-
-- `--dataset-path /path/to/tasks`
-- `--task-id task_name` (repeatable)
-- `--exclude-task-id pattern` (repeatable)
-- `--docker-image-strategy remote|local-build|local-existing`
-- `--docker-image-namespace <namespace>`
-- `--docker-image-tag <tag>`
-- `--output-path <runs-dir>`
-- `--run-id <custom-id>`
-
-For the full option surface, run:
+Contribution-flow tests:
 
 ```bash
-uv run loopsbench run --help
-```
-or
-```bash
-loopsbench run --help
-```
-if you used the editable pip install.
-
-## Module invocation examples
-
-If you prefer module-style invocation:
-
-```bash
-uv run python -m loopsbench.cli.main --help
-uv run python -m loopsbench.cli.main tasks list --tasks-dir /path/to/tasks
-uv run python -m loopsbench.cli.main run \
-  --dataset-path /path/to/tasks \
-  --task-id task_compiler \
-  --agent oracle \
-  --docker-image-strategy remote \
-  --docker-image-namespace dolischwer \
-  --docker-image-tag latest
+python -m pytest \
+  tests/test_agent_factory.py \
+  tests/test_pr_proposal_check.py \
+  tests/test_task_contribution_validation.py \
+  tests/test_list_changed_tasks.py \
+  tests/test_list_pr_changed_files.py \
+  tests/test_task_pr_path_check.py \
+  tests/test_publish_workflow_helpers.py \
+  tests/test_frontend_sync.py -q
 ```
 
-This can be convenient when you are working inside a development environment without relying on the installed console script.
-
-## Notes on Docker prerequisites
-
-Before using Docker-backed runs, make sure:
-- Docker is installed and running
-- the external task checkout contains valid `docker-compose.yaml` files for the tasks you want to run
-- if using `remote` mode, the referenced images exist in the chosen namespace and tag
-- if using `local-existing`, the expected local task images are already present
-
-If a remote image is missing, the harness will fail during startup when it tries to pull the resolved image reference.
-
-If a local-existing image is missing, the harness will fail before `docker compose up` with a local image inspection error.
-
-Those failure modes are expected and are covered by the retained harness tests.
-
-## Summary
-
-This repository is best treated as a LoopsBench harness/core development checkout with:
-- a working packaged CLI
-- editable installation support
-- documented Docker image strategy controls
-- a small retained harness-focused test suite
-- no bundled task dataset
-
-For realistic runs, pair it with an external `tasks/` checkout and choose the Docker image strategy that matches your workflow.
+Before using Docker-backed runs, make sure Docker is installed, running, and able to build the task images referenced by the selected strategy.

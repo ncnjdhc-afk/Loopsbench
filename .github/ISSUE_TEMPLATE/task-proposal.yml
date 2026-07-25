@@ -1,0 +1,180 @@
+name: Task Proposal
+description: Propose a new LoopsBench task before building the full contribution.
+title: "[Task Proposal] "
+labels:
+  - task-proposal
+  - proposal: pending
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submit the task idea here. Do **not** attach a finished task bundle, ZIP archive, Dockerfile bundle, tests, or gold patches.
+        Full tasks are submitted later through a Pull Request after maintainer approval.
+        Proposal approval means the task idea is worth building, but it does **not** guarantee the final task will be merged.
+        It is usually better to wait for proposal approval before investing in the full task implementation.
+  - type: input
+    id: task_title
+    attributes:
+      label: Task title
+      placeholder: TCP-Like Reliable Transport over Simulated UDP
+    validations:
+      required: true
+  - type: dropdown
+    id: source_type
+    attributes:
+      label: Source type
+      options:
+        - Pull request sequence
+        - Course lab progression
+        - Research implementation evolution
+        - Release milestone chain
+        - Other real development record
+    validations:
+      required: true
+  - type: input
+    id: source_url
+    attributes:
+      label: Source URL
+      placeholder: https://github.com/example/project/pull/123
+    validations:
+      required: true
+  - type: input
+    id: repository_url
+    attributes:
+      label: Repository URL
+      placeholder: https://github.com/example/project
+    validations:
+      required: true
+  - type: input
+    id: base_revision
+    attributes:
+      label: Base commit / tag / revision
+      placeholder: 0123abcd or v1.2.3
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Task summary
+      description: What should the final LoopsBench task cover?
+      placeholder: Summarize the task and the expected implementation arc.
+    validations:
+      required: true
+  - type: textarea
+    id: long_horizon
+    attributes:
+      label: Why is this long-horizon?
+      placeholder: Explain why the task is more than a single local edit.
+    validations:
+      required: true
+  - type: textarea
+    id: modules
+    attributes:
+      label: Proposed modules
+      placeholder: List the major modules and their implementation order.
+    validations:
+      required: true
+  - type: textarea
+    id: units
+    attributes:
+      label: Proposed units
+      placeholder: List the separately testable units.
+    validations:
+      required: true
+  - type: textarea
+    id: dag
+    attributes:
+      label: Proposed dependency DAG
+      placeholder: Describe the prerequisite edges between units.
+    validations:
+      required: true
+  - type: textarea
+    id: dag_evidence
+    attributes:
+      label: Source evidence for dependency edges
+      placeholder: Cite the PR chain, commits, docs, or code-level evidence that justify each edge.
+    validations:
+      required: true
+  - type: textarea
+    id: gold_source
+    attributes:
+      label: Gold solution / gold patch source
+      placeholder: Describe where the correct implementation or patch sequence comes from.
+    validations:
+      required: true
+  - type: textarea
+    id: testing_strategy
+    attributes:
+      label: Testing strategy
+      placeholder: Explain the full-task tests and unit-level tests.
+    validations:
+      required: true
+  - type: textarea
+    id: unit_verification
+    attributes:
+      label: Unit-level verification strategy
+      placeholder: Explain how ancestor-only, partial, and incorrect implementations will be rejected.
+    validations:
+      required: true
+  - type: input
+    id: expert_effort
+    attributes:
+      label: Expected expert effort
+      placeholder: 90 minutes
+    validations:
+      required: true
+  - type: textarea
+    id: difficulty
+    attributes:
+      label: Difficulty justification
+      placeholder: Explain the expected difficulty and why.
+    validations:
+      required: true
+  - type: textarea
+    id: licensing
+    attributes:
+      label: License and redistribution status
+      placeholder: Confirm code, tests, and patches can be redistributed for evaluation.
+    validations:
+      required: true
+  - type: input
+    id: contributor_github
+    attributes:
+      label: Contributor GitHub account
+      placeholder: your-github-login
+    validations:
+      required: true
+  - type: input
+    id: contributor_name
+    attributes:
+      label: Contributor name
+    validations:
+      required: true
+  - type: input
+    id: contributor_org
+    attributes:
+      label: Contributor organization
+      placeholder: optional
+    validations:
+      required: false
+  - type: textarea
+    id: experience
+    attributes:
+      label: Relevant experience
+      placeholder: Why are you a good fit to build this task?
+    validations:
+      required: false
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Known limitations
+      placeholder: Note any data, licensing, or reproducibility concerns.
+    validations:
+      required: false
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      placeholder: Any other detail that would help reviewers.
+    validations:
+      required: false
