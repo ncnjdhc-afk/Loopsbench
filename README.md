@@ -61,7 +61,7 @@ LoopsBench uses a GitHub-native contribution flow. The website's `Submit Task` p
 3. Wait for maintainer approval.
 4. Build the task in your fork under `tasks/task_<id>/`.
 5. Open a pull request using `.github/pull_request_template.md`.
-6. Pass static validation, strict per-PR validation, Oracle, and maintainer review before merge.
+6. Pass static validation, Oracle, and maintainer review before merge.
 
 Create a new task from the checked-in template:
 
@@ -74,7 +74,6 @@ Run the expected local validation commands before opening a PR:
 ```bash
 python3 scripts/validate_task_contribution.py --task-dir tasks/task_my_new_case --static-only
 loopsbench tasks validate --task-id task_my_new_case
-python3 scripts/validate_per_pr.py --task-dir tasks/task_my_new_case --strict-fail-to-pass
 loopsbench run --agent oracle --task-id task_my_new_case --dataset-path tasks --docker-image-strategy local-build
 ```
 

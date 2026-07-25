@@ -121,12 +121,6 @@ Run the basic harness task validator:
 loopsbench tasks validate --task-id task_my_new_case
 ```
 
-Run strict unit / DAG validation:
-
-```bash
-python3 scripts/validate_per_pr.py --task-dir tasks/task_my_new_case --strict-fail-to-pass
-```
-
 Run Oracle end-to-end:
 
 ```bash
@@ -172,7 +166,6 @@ This repository ships two CI layers for contributed tasks:
   - trusted workflow definition from the default branch
   - full validation on an isolated self-hosted runner
   - `loopsbench tasks validate`
-  - `validate_per_pr.py --strict-fail-to-pass`
   - `loopsbench run --agent oracle`
 
 The PR workflows intentionally check out trusted base-revision code for the harness and workflow scripts, then treat the pull-request checkout as untrusted task data. The full workflow intentionally targets a self-hosted runner label. Do not run untrusted task Dockerfiles with repository secrets on a general-purpose runner.

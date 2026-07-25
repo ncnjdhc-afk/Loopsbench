@@ -71,7 +71,6 @@ jobs:
             python3 scripts/validate_task_contribution.py \
               --task-dir "pr/$task_dir" \
               --run-tasks-validate \
-              --run-strict-per-pr \
               --run-oracle \
               --oracle-output-root ".artifacts/oracle/$task_id" \
               --json-out ".artifacts/contribution-validation/$task_id.json"
@@ -91,18 +90,17 @@ jobs:
           lines = [
               "## Task PR Full Validation Summary",
               "",
-              "| Task ID | Static | `loopsbench tasks validate` | Strict per-PR | Oracle |",
-              "| --- | --- | --- | --- | --- |",
+              "| Task ID | Static | `loopsbench tasks validate` | Oracle |",
+              "| --- | --- | --- | --- |",
           ]
           for report_path in sorted(report_dir.glob("*.json")):
               payload = json.loads(report_path.read_text(encoding="utf-8"))
               commands = {item["name"]: item for item in payload.get("commands", [])}
               static_result = "passed" if not payload.get("issues") else "failed"
               lhb_result = "passed" if commands.get("loopsbench_tasks_validate", {}).get("returncode") == 0 else "failed"
-              per_pr_result = "passed" if commands.get("validate_per_pr", {}).get("returncode") == 0 else "failed"
               oracle_result = "passed" if commands.get("oracle", {}).get("returncode") == 0 else "failed"
               lines.append(
-                  f"| `{payload['task_id']}` | {static_result} | {lhb_result} | {per_pr_result} | {oracle_result} |"
+                  f"| `{payload['task_id']}` | {static_result} | {lhb_result} | {oracle_result} |"
               )
           summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY

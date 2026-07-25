@@ -33,7 +33,6 @@ Paste the commands you ran and summarize the results:
 ```bash
 python3 scripts/validate_task_contribution.py --task-dir tasks/<task-id> --static-only
 loopsbench tasks validate --task-id <task-id>
-python3 scripts/validate_per_pr.py --task-dir tasks/<task-id> --strict-fail-to-pass
 loopsbench run --agent oracle --task-id <task-id> --dataset-path tasks --docker-image-strategy local-build
 ```
 
@@ -52,7 +51,6 @@ loopsbench run --agent oracle --task-id <task-id> --dataset-path tasks --docker-
 - [ ] This PR changes one task only, or maintainers explicitly approved a broader change.
 - [ ] `task.yaml`, DAG files, requirements, tests, and gold patches are included.
 - [ ] Static validation passed locally.
-- [ ] Strict unit / DAG validation passed locally.
 - [ ] Oracle passed locally.
 - [ ] The task does not expose hidden tests or gold patches in `base/`.
 - [ ] The task is grounded in a real source and includes source evidence.

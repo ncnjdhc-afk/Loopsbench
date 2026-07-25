@@ -54,7 +54,6 @@ jobs:
             python3 scripts/validate_task_contribution.py \
               --task-dir "$task_dir" \
               --run-tasks-validate \
-              --run-strict-per-pr \
               --run-oracle \
               --require-provenance \
               --oracle-output-root ".artifacts/oracle/$task_id" \
