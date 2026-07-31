@@ -47,6 +47,9 @@ ignore = ["E501"]
 known-first-party = ["loopsbench"]
 known-third-party = ["docker"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

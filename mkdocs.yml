@@ -1,0 +1,71 @@
+site_name: LoopsBench
+site_description: A benchmark for evaluating AI agents on long-horizon terminal tasks.
+site_url: https://loopsbench.ai/
+repo_name: microsoft/Loopsbench
+repo_url: https://github.com/microsoft/Loopsbench
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_signature_annotations: true
+            separate_signature: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - Guides:
+      - Running Benchmarks: guides/running.md
+      - Contributing Tasks: guides/tasks.md
+      - Repository Admin Setup: repo_admin_setup.md
+  - API Reference:
+      - Overview: api/index.md
+      - CLI: api/cli.md
+      - Harness: api/harness.md
+      - Tasks and Datasets: api/tasks.md
+      - Agents: api/agents.md
+      - Configuration: api/config.md

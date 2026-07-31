@@ -1,43 +1,67 @@
-# LoopsBench
+<h1 align="center">LoopsBench</h1>
 
-LoopsBench is the canonical source for both the harness and the benchmark task definitions.
+<p align="center"><strong>A benchmark for evaluating AI agents on long-horizon terminal tasks.</strong></p>
 
-This repository now includes:
-- the Python package under `loopsbench/`
-- checked-in task assets under `tasks/`
-- GitHub-native contribution workflows under `.github/`
-- repository tests under `tests/`
-- packaging metadata such as `pyproject.toml`, `uv.lock`, and `registry.json`
+<p align="center">
+  <a href="https://loopsbench.ai"><img alt="Website" src="https://img.shields.io/badge/website-loopsbench.ai-0f766e?logo=googlechrome&logoColor=white"></a>
+  <a href="https://loopsbench.ai/api/"><img alt="API reference" src="https://img.shields.io/badge/API-reference-2563eb?logo=readthedocs&logoColor=white"></a>
+  <a href="#citation"><img alt="arXiv coming soon" src="https://img.shields.io/badge/arXiv-coming%20soon-b31b1b.svg?logo=arxiv"></a>
+  <a href="https://github.com/microsoft/Loopsbench/actions/workflows/pages.yml"><img alt="Pages" src="https://github.com/microsoft/Loopsbench/actions/workflows/pages.yml/badge.svg"></a>
+  <img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-3776ab?logo=python&logoColor=white">
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/microsoft/Loopsbench"></a>
+</p>
 
-## Repository Layout
+<p align="center">
+  <a href="https://loopsbench.ai">Website</a> .
+  <a href="https://loopsbench.ai/quickstart/">Quick Start</a> .
+  <a href="https://loopsbench.ai/api/">API Docs</a> .
+  <a href="CONTRIBUTING.md">Contribute Tasks</a>
+</p>
 
-```text
-LoopsBench/
-  .github/
-    ISSUE_TEMPLATE/
-    workflows/
-    pull_request_template.md
-  loopsbench/   # Core package, CLI, harness, Docker helpers
-  scripts/      # Contribution validation, publish, and sync helpers
-  tasks/
-    _template/  # Starting point for new tasks
-    task_tcp_course_stack/
-  tests/
-  pyproject.toml
-  registry.json
-  uv.lock
-```
+---
+
+## Introduction
+
+LoopsBench is a benchmark and harness for measuring how well AI coding agents complete long-horizon software tasks in terminal environments. A LoopsBench task packages an agent-visible workspace, unit-level requirements, dependency graphs, Docker-backed execution, and verifiers that distinguish incomplete, partial, and complete solutions.
+
+This repository is the source of truth for:
+
+- the `loopsbench` Python package and Typer CLI
+- benchmark task definitions under `tasks/`
+- Docker image resolution and local/remote execution strategies
+- built-in agent adapters and custom-agent loading
+- GitHub-native task proposal, validation, and publish workflows
+- the documentation site published at [loopsbench.ai](https://loopsbench.ai)
+
+## Why LoopsBench
+
+Many coding benchmarks emphasize isolated edits. LoopsBench focuses on tasks that require agents to plan, implement, test, and recover across multiple connected units. Each task can encode module dependencies, unit acceptance criteria, hidden or public tests, and an Oracle run used by maintainers to verify the task before publication.
+
+Key properties:
+
+- **Long-horizon structure**: tasks are decomposed into modules and separately testable units.
+- **Terminal realism**: agents work inside task containers with command-line tools, logs, and test scripts.
+- **Reproducible execution**: Docker-backed tasks support remote images, local builds, or existing local images.
+- **Agent breadth**: built-in adapters include Oracle, Mini SWE-agent, SWE-agent, OpenHands, Claude Code, Cursor, Codex, Qwen Code, and Copilot.
+- **Contribution safety**: untrusted task PRs are validated by trusted workflow code before merge.
+
+## What's New
+
+- GitHub-native task proposals and PR validation are now included in this repository.
+- `loopsbench run` supports remote, local-build, and local-existing Docker image strategies.
+- Task publishing emits deterministic bundles and SHA-256 checksums from trusted default-branch workflows.
+- API documentation is generated automatically and deployed to [loopsbench.ai](https://loopsbench.ai).
 
 ## Installation
 
-### Option A: `uv`
+Install with `uv`:
 
 ```bash
 uv sync --dev
 uv run loopsbench --help
 ```
 
-### Option B: editable `pip` install
+Or install in an editable virtual environment:
 
 ```bash
 python -m venv .venv
@@ -46,75 +70,27 @@ pip install -e .
 loopsbench --help
 ```
 
-Module-style invocation also works:
+Module-style invocation is also supported:
 
 ```bash
 python -m loopsbench.cli.main --help
 ```
 
-## Submit a Task
+## Quick Start
 
-LoopsBench uses a GitHub-native contribution flow. The website's `Submit Task` page should link to this repository and the issue form below; contributors do not upload ZIP archives or finished task bundles through the website.
-
-1. Review the task requirements in [CONTRIBUTING.md](CONTRIBUTING.md), `tasks/_template/`, and the example task `tasks/task_tcp_course_stack/`.
-2. Open a proposal issue with `.github/ISSUE_TEMPLATE/task-proposal.yml`.
-3. Wait for maintainer approval.
-4. Build the task in your fork under `tasks/task_<id>/`.
-5. Open a pull request using `.github/pull_request_template.md`.
-6. Pass static validation, Oracle, and maintainer review before merge.
-
-Create a new task from the checked-in template:
-
-```bash
-loopsbench tasks create task_my_new_case
-```
-
-Run the expected local validation commands before opening a PR:
-
-```bash
-python3 scripts/validate_task_contribution.py --task-dir tasks/task_my_new_case --static-only
-loopsbench tasks validate --task-id task_my_new_case
-loopsbench run --agent oracle --task-id task_my_new_case --dataset-path tasks --docker-image-strategy local-build
-```
-
-## Running LoopsBench
-
-Use the checked-in `tasks/` tree directly:
+List the checked-in benchmark tasks:
 
 ```bash
 loopsbench tasks list --tasks-dir tasks
+```
+
+Validate task metadata and required files:
+
+```bash
 loopsbench tasks validate --tasks-dir tasks
-loopsbench run --dataset-path tasks --task-id task_tcp_course_stack --agent oracle --docker-image-strategy local-build
 ```
 
-If you prefer `uv`:
-
-```bash
-uv run loopsbench tasks list --tasks-dir tasks
-uv run loopsbench run --dataset-path tasks --task-id task_tcp_course_stack --agent oracle --docker-image-strategy local-build
-```
-
-## Docker Image Strategies
-
-The harness supports three Docker image modes through `loopsbench run` and `loopsbench runs create`:
-
-- `remote`: pull prebuilt task images from a remote registry
-- `local-build`: build task images locally from each task's `docker-compose.yaml`
-- `local-existing`: use already-present local images without rebuilding
-
-Example remote run:
-
-```bash
-loopsbench run \
-  --dataset-path tasks \
-  --task-id task_tcp_course_stack \
-  --agent oracle \
-  --docker-image-strategy remote \
-  --docker-image-namespace your-namespace \
-  --docker-image-tag latest
-```
-
-Example local build:
+Run the example task with the Oracle agent and a local Docker build:
 
 ```bash
 loopsbench run \
@@ -124,20 +100,128 @@ loopsbench run \
   --docker-image-strategy local-build
 ```
 
-## Publish and Release Model
+Run against prebuilt remote task images:
 
-Merged task contributions remain source-controlled under `tasks/`. After merge, the trusted publish workflow:
+```bash
+loopsbench run \
+  --dataset-path tasks \
+  --task-id task_tcp_course_stack \
+  --agent codex \
+  --model provider/model-name \
+  --docker-image-strategy remote \
+  --docker-image-namespace your-dockerhub-namespace \
+  --docker-image-tag latest
+```
 
-- reruns validation on the default branch
-- records the task version as the merge commit SHA
-- emits deterministic task bundles plus SHA-256 checksums
-- can optionally sync published benchmark snapshots into the frontend repository
+## Configuration
 
-GitHub Releases remain a distribution channel for published task bundles, but they are not the review entry point. Proposal issues and pull requests are the review entry points.
+Most `loopsbench run` options can be expressed in YAML and overridden from the CLI:
 
-## Testing Quick Reference
+```yaml
+dataset_path: tasks
+output_path: runs
+task_ids:
+  - task_tcp_course_stack
+agent: codex
+model: provider/model-name
+docker_image_strategy: local-build
+n_concurrent: 2
+n_attempts: 1
+log_level: info
+```
 
-Repository-level harness tests:
+Run with:
+
+```bash
+loopsbench run --config run.yaml
+```
+
+Agent and model environment variables can be provided separately so secrets do not live in run configs:
+
+```yaml
+env_files:
+  - .env
+env:
+  OPENAI_MODEL: gpt-5
+```
+
+Then pass it with:
+
+```bash
+loopsbench run --config run.yaml --model-config model-env.yaml
+```
+
+## Python API
+
+The public Python API mirrors the CLI internals for datasets, task metadata, run configuration, Docker image strategy resolution, and agent loading:
+
+```python
+from pathlib import Path
+
+from loopsbench.agents.agent_factory import AgentFactory
+from loopsbench.agents.agent_name import AgentName
+from loopsbench.dataset.dataset import Dataset
+from loopsbench.task_images.strategy import DockerImageStrategy, resolve_task_docker_image
+
+dataset = Dataset(path=Path("tasks"), task_ids=["task_tcp_course_stack"])
+print(dataset.task_ids)
+
+oracle = AgentFactory.get_agent(AgentName.ORACLE)
+image = resolve_task_docker_image(
+    task_id="task_tcp_course_stack",
+    strategy=DockerImageStrategy.LOCAL_BUILD,
+    docker_image_namespace=None,
+    docker_image_tag=None,
+)
+print(oracle.name(), image.client_image_ref)
+```
+
+See the generated [API reference](https://loopsbench.ai/api/) for module-level documentation.
+
+## Submit a Task
+
+LoopsBench uses a GitHub-native contribution flow. Contributors should not upload ZIP archives or finished task bundles through the website. Proposals and task implementations are reviewed in GitHub.
+
+1. Read [CONTRIBUTING.md](CONTRIBUTING.md), `tasks/_template/`, and `tasks/task_tcp_course_stack/`.
+2. Open a Task Proposal issue with `.github/ISSUE_TEMPLATE/task-proposal.yml`.
+3. Wait for maintainer approval.
+4. Build the task in your fork under `tasks/task_<id>/`.
+5. Open a pull request with `.github/pull_request_template.md`.
+6. Pass static validation, Oracle validation, and maintainer review.
+
+Create a new task from the template:
+
+```bash
+loopsbench tasks create task_my_new_case
+```
+
+Run local validation before opening a PR:
+
+```bash
+python3 scripts/validate_task_contribution.py --task-dir tasks/task_my_new_case --static-only
+loopsbench tasks validate --task-id task_my_new_case
+loopsbench run --agent oracle --task-id task_my_new_case --dataset-path tasks --docker-image-strategy local-build
+```
+
+## Repository Layout
+
+```text
+LoopsBench/
+  .github/       # Issue forms, PR template, validation and publish workflows
+  docs/          # Documentation site and generated API reference sources
+  loopsbench/    # Core package, CLI, harness, Docker helpers, agent adapters
+  scripts/       # Contribution validation, publish, and repo admin helpers
+  tasks/         # Source-controlled benchmark tasks and the task template
+  tests/         # Repository-level tests
+  mkdocs.yml     # GitHub Pages documentation configuration
+  pyproject.toml
+  registry.json
+  uv.lock
+```
+
+## Testing
+
+Run the focused repository tests:
 
 ```bash
 python -m pytest \
@@ -147,7 +231,7 @@ python -m pytest \
   tests/test_run_docker_image_strategy.py -q
 ```
 
-Contribution-flow tests:
+Run the contribution-flow tests:
 
 ```bash
 python -m pytest \
@@ -157,8 +241,30 @@ python -m pytest \
   tests/test_list_changed_tasks.py \
   tests/test_list_pr_changed_files.py \
   tests/test_task_pr_path_check.py \
-  tests/test_publish_workflow_helpers.py \
-  tests/test_frontend_sync.py -q
+  tests/test_publish_workflow_helpers.py -q
 ```
 
-Before using Docker-backed runs, make sure Docker is installed, running, and able to build the task images referenced by the selected strategy.
+Build the documentation locally:
+
+```bash
+python -m pip install -r docs/requirements.txt
+python -m pip install -e .
+mkdocs serve
+```
+
+## Citation
+
+The LoopsBench paper is coming soon. For now, please cite the repository URL and version or commit SHA used in your experiments.
+
+```bibtex
+@misc{loopsbench2026,
+  title        = {LoopsBench: A Benchmark for Long-Horizon Terminal Agents},
+  howpublished = {\url{https://github.com/microsoft/Loopsbench}},
+  year         = {2026},
+  note         = {arXiv coming soon}
+}
+```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). Third-party agent integrations and vendored components may carry their own licenses; review their local license files before redistribution.
