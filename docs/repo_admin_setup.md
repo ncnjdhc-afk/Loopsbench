@@ -71,6 +71,8 @@ The documentation site is built by `.github/workflows/pages.yml` and deployed fr
 
 The repository includes `docs/CNAME`, so the generated Pages artifact keeps the custom domain when the workflow deploys.
 
+If GitHub returns `Invalid cname` or reports that `loopsbench.ai` is already taken, the domain is still attached to another GitHub Pages site. Release it from the existing Pages repository or verify the domain for the Microsoft organization before retrying the custom-domain setting.
+
 ## 5. Verify the setup
 
 After the admin steps are complete, verify:
