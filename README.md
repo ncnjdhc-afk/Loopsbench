@@ -227,7 +227,6 @@ Run the focused repository tests:
 python -m pytest \
   tests/test_docker_compose_manager.py \
   tests/test_harness_docker_image_metadata.py \
-  tests/test_repo_profiles.py \
   tests/test_run_docker_image_strategy.py -q
 ```
 

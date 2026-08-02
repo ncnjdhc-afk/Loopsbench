@@ -34,11 +34,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Run `loopsbench tasks validate` after static checks.",
     )
     parser.add_argument(
-        "--run-strict-per-pr",
-        action="store_true",
-        help="Run scripts/validate_per_pr.py --strict-fail-to-pass after static checks.",
-    )
-    parser.add_argument(
         "--run-oracle",
         action="store_true",
         help="Run `loopsbench run --agent oracle` after static checks.",
@@ -61,7 +56,6 @@ def main() -> int:
     report = run_task_contribution_checks(
         args.task_dir,
         run_tasks_validate=False if args.static_only else args.run_tasks_validate,
-        run_strict_per_pr=False if args.static_only else args.run_strict_per_pr,
         run_oracle=False if args.static_only else args.run_oracle,
         oracle_output_root=args.oracle_output_root,
         require_provenance=args.require_provenance,

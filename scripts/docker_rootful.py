@@ -11,7 +11,7 @@ def docker_cli_prefix() -> list[str]:
 
 def docker_env() -> dict[str, str]:
     env = os.environ.copy()
-    if os.environ.get("LHB_ROOTFUL_DOCKER", "1") != "0":
+    if os.environ.get("LOOPSBENCH_ROOTFUL_DOCKER", "1") != "0":
         env.pop("DOCKER_HOST", None)
         env.pop("DOCKER_CONTEXT", None)
     return env

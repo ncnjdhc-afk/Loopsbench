@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from loopsbench.utils.compose_env import with_legacy_lhb_aliases
+from loopsbench.utils.compose_env import compose_runtime_env
 
 
 def _run(
@@ -65,7 +65,7 @@ def _publish_compose_env(
             "DOCKER_DEFAULT_PLATFORM": platform,
         }
     )
-    return with_legacy_lhb_aliases(env)
+    return compose_runtime_env(env)
 
 
 def publish_task_image(

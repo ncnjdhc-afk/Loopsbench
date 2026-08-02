@@ -20,9 +20,9 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 def _tests_common_dir() -> str:
     """Directory containing shared *.c helpers (test_unit.c, mocks).
 
-    validate_per_pr stages per-PR pytest files flat under /workspace, so __file__
-    is not under tests/<unit>/. Full tree is always copied to /tests in the
-    validator container.
+    The validator may stage pytest files flat under /workspace, so __file__ is
+    not always under tests/<unit>/. The full task tree is always copied to
+    /tests in the validator container.
     """
     if os.path.isfile("/tests/test_unit.c"):
         return "/tests"

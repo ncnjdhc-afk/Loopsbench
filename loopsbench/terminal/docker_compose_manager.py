@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Mapping, Sequence
 
 from loopsbench.task_images.strategy import DockerImageStrategy
-from loopsbench.utils.compose_env import with_legacy_lhb_aliases
+from loopsbench.utils.compose_env import compose_runtime_env
 from loopsbench.utils.env_model import EnvModel
 from loopsbench.utils.logger import logger
 
@@ -171,7 +171,7 @@ class DockerComposeManager:
                 else None
             ),
         ).to_env_dict(include_os_env=False)
-        self.env = {**docker_env(), **with_legacy_lhb_aliases(compose_env)}
+        self.env = {**docker_env(), **compose_runtime_env(compose_env)}
 
     # -- compose commands --
 

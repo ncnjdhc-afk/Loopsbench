@@ -51,13 +51,13 @@ def _write_valid_task(
                 "services": {
                     "client": {
                         "build": {"dockerfile": "Dockerfile"},
-                        "image": "${LHB_TASK_DOCKER_CLIENT_IMAGE_NAME}",
-                        "container_name": "${LHB_TASK_DOCKER_CLIENT_CONTAINER_NAME}",
+                        "image": "${LOOPSBENCH_TASK_DOCKER_CLIENT_IMAGE_NAME}",
+                        "container_name": "${LOOPSBENCH_TASK_DOCKER_CLIENT_CONTAINER_NAME}",
                         "command": ["sh", "-c", "sleep infinity"],
-                        "environment": ["TEST_DIR=${LHB_TEST_DIR}"],
+                        "environment": ["TEST_DIR=${LOOPSBENCH_TEST_DIR}"],
                         "volumes": [
-                            "${LHB_TASK_LOGS_PATH}:${LHB_CONTAINER_LOGS_PATH}",
-                            "${LHB_TASK_AGENT_LOGS_PATH}:${LHB_CONTAINER_AGENT_LOGS_PATH}",
+                            "${LOOPSBENCH_TASK_LOGS_PATH}:${LOOPSBENCH_CONTAINER_LOGS_PATH}",
+                            "${LOOPSBENCH_TASK_AGENT_LOGS_PATH}:${LOOPSBENCH_CONTAINER_AGENT_LOGS_PATH}",
                         ],
                     }
                 }

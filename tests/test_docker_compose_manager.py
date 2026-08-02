@@ -435,7 +435,7 @@ def test_stop_with_cleanup_runs_image_and_volume_cleanup(
     ]
 
 
-def test_compose_env_exports_legacy_lhb_aliases(
+def test_compose_env_exports_loopsbench_names_only(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -449,8 +449,4 @@ def test_compose_env_exports_legacy_lhb_aliases(
     assert manager.env["LOOPSBENCH_TASK_DOCKER_CLIENT_IMAGE_NAME"] == (
         "loopsbench__task_demo__client"
     )
-    assert manager.env["LHB_TASK_DOCKER_CLIENT_IMAGE_NAME"] == (
-        "loopsbench__task_demo__client"
-    )
     assert manager.env["LOOPSBENCH_TEST_DIR"] == "/tests"
-    assert manager.env["LHB_TEST_DIR"] == "/tests"

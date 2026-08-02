@@ -495,7 +495,7 @@ def _validate_requirements(
 
 
 def _load_noop_stems(gold_dir: Path) -> set[str]:
-    noop_path = gold_dir / ".lhb_split_noop.json"
+    noop_path = gold_dir / ".loopsbench_split_noop.json"
     if not noop_path.is_file():
         return set()
     try:
@@ -716,7 +716,6 @@ def run_task_contribution_checks(
     task_dir: Path,
     *,
     run_tasks_validate: bool = False,
-    run_strict_per_pr: bool = False,
     run_oracle: bool = False,
     oracle_output_root: Path | None = None,
     require_provenance: bool = False,
@@ -742,21 +741,6 @@ def run_task_contribution_checks(
                     str(tasks_root),
                     "--task-id",
                     task_id,
-                ],
-                cwd=repo_root,
-            )
-        )
-
-    if run_strict_per_pr:
-        report.add_command(
-            run_command(
-                "validate_per_pr",
-                [
-                    sys.executable,
-                    str(repo_root / "scripts" / "validate_per_pr.py"),
-                    "--task-dir",
-                    str(task_dir.resolve()),
-                    "--strict-fail-to-pass",
                 ],
                 cwd=repo_root,
             )

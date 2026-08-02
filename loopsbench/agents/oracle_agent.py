@@ -12,7 +12,7 @@ from loopsbench.terminal.tmux_session import TmuxSession
 # Path inside the container where task files (solution.sh, gold-patch.diff,
 # etc.) are made available by the oracle.
 _CONTAINER_TASK_DIR = "/task"
-# Progressive gold shards: same layout as validate_per_pr / solution.sh under ``/workspace``.
+# Progressive gold shards are staged under ``/workspace`` to match ``solution.sh``.
 _CONTAINER_GOLD_PATCHES_DIR = "/workspace"
 
 
@@ -51,7 +51,7 @@ class OracleAgent(BaseAgent):
 
         # Copy task-level files (solution.sh, gold-patch.diff, …) into ``/task/``.
         # Copy ``gold_patches/`` into ``/workspace/gold_patches`` so progressive
-        # ``solution.sh`` matches validate_per_pr and typical ``cd /workspace`` flows.
+        # ``solution.sh`` can apply shard diffs from the workspace root.
         task_paths: list[Path] = [p for p in task_dir.iterdir() if p.is_file()]
         DockerComposeManager.copy_to_container(
             container=session._container,
