@@ -23,6 +23,7 @@ run_tests_in_same_shell: false
 expert_time_estimate_min: 90
 junior_time_estimate_min: 240
 
+# Keep this template minimal; task-specific provenance should be filled with real values.
 # Publish-required provenance metadata for the GitHub-native contribution workflow.
 # Uncomment and fill these fields before opening the task PR. A merged task without
 # these fields will fail the trusted publish workflow.

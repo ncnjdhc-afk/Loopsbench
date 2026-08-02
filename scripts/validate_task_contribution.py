@@ -53,6 +53,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = _build_parser().parse_args()
+    # This CLI is the same narrow entrypoint used by task contribution workflows.
     report = run_task_contribution_checks(
         args.task_dir,
         run_tasks_validate=False if args.static_only else args.run_tasks_validate,

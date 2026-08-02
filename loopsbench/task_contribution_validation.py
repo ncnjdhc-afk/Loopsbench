@@ -495,6 +495,7 @@ def _validate_requirements(
 
 
 def _load_noop_stems(gold_dir: Path) -> set[str]:
+    # Keep the noop manifest name aligned with the checked-in task examples.
     noop_path = gold_dir / ".loopsbench_split_noop.json"
     if not noop_path.is_file():
         return set()

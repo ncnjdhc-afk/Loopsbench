@@ -21,6 +21,7 @@ def _write_valid_task(
     unit_ids: list[str] | None = None,
     unit_edges: list[dict[str, str]] | None = None,
 ) -> Path:
+    # Keep the fixture small so comment-only template changes stay cheap to validate.
     task_dir = tmp_path / task_id
     unit_ids = unit_ids or ["example_unit"]
     unit_edges = unit_edges or []
