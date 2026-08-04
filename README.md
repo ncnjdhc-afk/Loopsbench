@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://loopsbench.ai"><img alt="Website" src="https://img.shields.io/badge/website-loopsbench.ai-0f766e?logo=googlechrome&logoColor=white"></a>
   <a href="https://loopsbench.ai/run"><img alt="API reference" src="https://img.shields.io/badge/API-reference-2563eb?logo=readthedocs&logoColor=white"></a>
-  <a href="#citation"><img alt="arXiv coming soon" src="https://img.shields.io/badge/arXiv-coming%20soon-b31b1b.svg?logo=arxiv"></a>
+  <a href="https://arxiv.org/abs/2608.00267"><img alt="arXiv 2608.00267" src="https://img.shields.io/badge/arXiv-2608.00267-b31b1b.svg?logo=arxiv"></a>
   <a href="https://github.com/microsoft/Loopsbench/actions/workflows/pages.yml"><img alt="Pages" src="https://github.com/microsoft/Loopsbench/actions/workflows/pages.yml/badge.svg"></a>
   <img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-3776ab?logo=python&logoColor=white">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
@@ -13,6 +13,8 @@
 
 <p align="center">
   <a href="https://loopsbench.ai">Website</a> .
+  <a href="https://arxiv.org/abs/2608.00267">Paper</a> .
+  <a href="https://github.com/aiki77z/lhvisual">Website Source</a> .
   <a href="https://loopsbench.ai/quickstart/">Quick Start</a> .
   <a href="https://loopsbench.ai/run">API Docs</a> .
   <a href="CONTRIBUTING.md">Contribute Tasks</a>
@@ -31,7 +33,7 @@ This repository is the source of truth for:
 - Docker image resolution and local/remote execution strategies
 - built-in agent adapters and custom-agent loading
 - GitHub-native task proposal, validation, and publish workflows
-- the documentation site published at [loopsbench.ai](https://loopsbench.ai)
+- the documentation site published at [loopsbench.ai](https://loopsbench.ai), with its frontend source in [aiki77z/lhvisual](https://github.com/aiki77z/lhvisual)
 
 ## Why LoopsBench
 
@@ -47,6 +49,7 @@ Key properties:
 
 ## What's New
 
+- The [LoopsBench paper](https://arxiv.org/abs/2608.00267) is now available on arXiv.
 - GitHub-native task proposals and PR validation are now included in this repository.
 - `loopsbench run` supports remote, local-build, and local-existing Docker image strategies.
 - Task publishing emits deterministic bundles and SHA-256 checksums from trusted default-branch workflows.
@@ -253,14 +256,15 @@ mkdocs serve
 
 ## Citation
 
-The LoopsBench paper is coming soon. For now, please cite the repository URL and version or commit SHA used in your experiments.
+Please cite the LoopsBench paper and record the repository version or commit SHA used in your experiments.
 
 ```bibtex
-@misc{loopsbench2026,
-  title        = {LoopsBench: A Benchmark for Long-Horizon Terminal Agents},
-  howpublished = {\url{https://github.com/microsoft/Loopsbench}},
-  year         = {2026},
-  note         = {arXiv coming soon}
+@article{li2026loopsbench,
+  title   = {LoopsBench: From Harness Engineering to Loop Engineering in Coding Agent Evaluation},
+  author  = {Li, Han and Fang, Zhemin and Feng, Rili and Zhao, Yingqi and Liu, Jiaheng and Gao, Pengfei and Ye, He and Lin, Dayi and Lin, Qingwei and Rajmohan, Saravan and Zhang, Dongmei},
+  journal = {arXiv preprint arXiv:2608.00267},
+  year    = {2026},
+  url     = {https://arxiv.org/abs/2608.00267}
 }
 ```
 

@@ -27,4 +27,4 @@ LoopsBench tasks are meant to capture realistic development arcs. A task can inc
 
 ## Paper
 
-The LoopsBench paper is coming soon. Until the arXiv preprint is available, cite the repository URL and the exact commit SHA used for experiments.
+Read [LoopsBench: From Harness Engineering to Loop Engineering in Coding Agent Evaluation](https://arxiv.org/abs/2608.00267) on arXiv. When reporting experiments, also record the exact repository commit SHA used.
