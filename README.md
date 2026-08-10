@@ -7,7 +7,6 @@
   <a href="https://loopsbench.ai/run"><img alt="API reference" src="https://img.shields.io/badge/API-reference-2563eb?logo=readthedocs&logoColor=white"></a>
   <a href="https://arxiv.org/abs/2608.00267"><img alt="arXiv 2608.00267" src="https://img.shields.io/badge/arXiv-2608.00267-b31b1b.svg?logo=arxiv"></a>
   <a href="https://huggingface.co/datasets/forcel48/LoopsBench"><img alt="Hugging Face Dataset" src="https://img.shields.io/badge/Hugging%20Face-dataset-ffd21e?logo=huggingface&logoColor=000000"></a>
-  <a href="https://github.com/microsoft/Loopsbench/actions/workflows/pages.yml"><img alt="Pages" src="https://github.com/microsoft/Loopsbench/actions/workflows/pages.yml/badge.svg"></a>
   <img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-3776ab?logo=python&logoColor=white">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
