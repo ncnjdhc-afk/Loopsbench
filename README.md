@@ -81,7 +81,22 @@ python -m loopsbench.cli.main --help
 
 ## Quick Start
 
-List the checked-in benchmark tasks:
+To work from the published benchmark release, download the latest task snapshot, verify the checksum, and extract it. The archive creates a local `tasks/` directory used by the commands below:
+
+```bash
+mkdir -p loopsbench-release
+cd loopsbench-release
+# Or download the same three files from the latest GitHub release page.
+gh release download --repo microsoft/Loopsbench \
+  --pattern 'loopsbench-tasks-*.tar.zst' \
+  --pattern 'loopsbench-tasks-*.tar.zst.sha256' \
+  --pattern 'loopsbench-tasks-*.manifest.json'
+sha256sum -c loopsbench-tasks-*.tar.zst.sha256
+tar --zstd -xf loopsbench-tasks-*.tar.zst
+# The archive creates ./tasks.
+```
+
+List benchmark tasks from the local `tasks/` dataset directory:
 
 ```bash
 loopsbench tasks list --tasks-dir tasks
@@ -103,7 +118,7 @@ loopsbench run \
   --docker-image-strategy local-build
 ```
 
-Run against prebuilt remote task images:
+Or pull prebuilt remote task images instead. The code requires `--docker-image-namespace` for `remote`; the current public Docker Hub namespace is `dolischwer`, and `--docker-image-tag` defaults to `latest`. Use the same `model-env.yaml` pattern described in Configuration:
 
 ```bash
 loopsbench run \
@@ -111,8 +126,9 @@ loopsbench run \
   --task-id task_tcp_course_stack \
   --agent codex \
   --model provider/model-name \
+  --model-config model-env.yaml \
   --docker-image-strategy remote \
-  --docker-image-namespace your-dockerhub-namespace \
+  --docker-image-namespace dolischwer \
   --docker-image-tag latest
 ```
 

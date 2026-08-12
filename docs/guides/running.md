@@ -48,7 +48,7 @@ LoopsBench supports three strategies:
 | `local-build` | Build images locally from each task's `docker-compose.yaml`. | Task authoring and local validation. |
 | `local-existing` | Reuse images already present on the machine. | Debugging or offline reruns. |
 
-Remote images require a namespace:
+Remote images require an explicit namespace. The current public Docker Hub namespace is `dolischwer`. If you omit `--docker-image-tag`, the code defaults it to `latest`:
 
 ```bash
 loopsbench run \
@@ -57,7 +57,7 @@ loopsbench run \
   --agent codex \
   --model provider/model-name \
   --docker-image-strategy remote \
-  --docker-image-namespace your-dockerhub-namespace \
+  --docker-image-namespace dolischwer \
   --docker-image-tag latest
 ```
 
