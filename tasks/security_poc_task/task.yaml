@@ -1,0 +1,5 @@
+name: security_poc_task
+description: PoC task for security validation
+version: "1.0"
+oracle:
+  script: oracle.py
