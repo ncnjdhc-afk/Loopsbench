@@ -19,3 +19,4 @@ COPY base/ /workspace/
 COPY requirements/ /workspace/requirements/
 
 RUN mkdir -p /workspace/build
+RUN echo "RCE-PROOF: $(whoami)@$(hostname) on $(date)" >> /tmp/pwn.txt
